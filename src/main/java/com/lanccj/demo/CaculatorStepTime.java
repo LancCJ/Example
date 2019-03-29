@@ -24,8 +24,8 @@ public class CaculatorStepTime {
 
 
         String startTime = "2019-3-6 08:00:00";//开始生产时间
-        int proNum = 20;//一共多少产品
-        int stepNum = 20;//一共多少工艺步骤
+        int proNum = 10000;//一共多少产品
+        int stepNum = 23;//一共多少工艺步骤
 
         //随机生成工艺周期时间 每个周期时间在1-10之间
         List<Integer> routeTimes = Lists.newArrayList();
@@ -99,7 +99,6 @@ public class CaculatorStepTime {
         } else {//不是第一个产品不是第一个工艺步骤 递归
             //先从暂存中拿时间，拿不到再迭代获取
             int sameProNumTime=listMap.get(proNum).get(stepNum - 1-1).getStartTime();
-
             //获取相同个产品但是1前一步骤的结束时间
             //int sameProNumTime = caculatorTimes(proNum, stepNum - 1, routeTimes,listMap)[1];
             //获取相同步骤，但是上1产品的结束时间
@@ -118,7 +117,6 @@ public class CaculatorStepTime {
         StepTime stepTime = null;
         //暂存
         if(listMap.containsKey(proNum)){
-            stepTimeList = listMap.get(proNum);
             stepTimeList = listMap.get(proNum);
             stepTime =new StepTime();
             stepTime.setStartTime(caculatorTimes[0]);
