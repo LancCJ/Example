@@ -5,8 +5,7 @@ import cn.hutool.core.date.TimeInterval;
 import com.google.common.collect.Lists;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * james_chen
@@ -14,6 +13,10 @@ import java.util.List;
  */
 public class CaculatorStepTime {
 
+    /**
+     * 暂存每一个工艺步骤的
+     */
+    private static Map<Integer,List<StepTime>> listMap;
 
     public static void main(String[] args) {
 
@@ -31,6 +34,8 @@ public class CaculatorStepTime {
             routeTimes.add(random);
         }
 
+        Map<Integer,List<StepTime>> listMap = new HashMap<>();
+
         System.out.println("=======模拟实际生产流水线计算产品在每个步骤的时间消耗=======");
         System.out.print("产品/步骤\t");
         //打印列头
@@ -45,7 +50,7 @@ public class CaculatorStepTime {
                 //计算秒数
                 //int[] caculatorTimes = caculatorTimes(j+1,i+1,routeTimes);
                 //计算日期时间
-                String[] caculatorTimes = caculatorTimes(j + 1, i + 1, routeTimes, startTime);
+                String[] caculatorTimes = caculatorTimes(j + 1, i + 1, routeTimes, startTime,listMap);
                 System.out.print(caculatorTimes[0] + "-" + caculatorTimes[1] + " ");
             }
             System.out.println();
@@ -63,9 +68,9 @@ public class CaculatorStepTime {
      * @param startTime  生产开始时间字符串 格式 2019-3-6 09:44:18
      * @return 返回开始时间   结束时间 的  年月日时间
      */
-    public static String[] caculatorTimes(int proNum, int stepNum, List<Integer> routeTimes, String startTime) {
+    public static String[] caculatorTimes(int proNum, int stepNum, List<Integer> routeTimes, String startTime,Map<Integer,List<StepTime>> listMap) {
         String[] caculatorDate = new String[2];
-        int[] caculatorTimes = caculatorTimes(proNum, stepNum, routeTimes);
+        int[] caculatorTimes = caculatorTimes(proNum, stepNum, routeTimes,listMap);
         //时间计算转换
         caculatorDate[0] = convertDate(startTime, caculatorTimes[0]);
         caculatorDate[1] = convertDate(startTime, caculatorTimes[1]);
@@ -80,7 +85,7 @@ public class CaculatorStepTime {
      * @param routeTimes 某工艺步骤所有周期时间int数组
      * @return 返回开始时间   结束时间 的  秒数
      */
-    public static int[] caculatorTimes(int proNum, int stepNum, List<Integer> routeTimes) {
+    public static int[] caculatorTimes(int proNum, int stepNum, List<Integer> routeTimes,Map<Integer,List<StepTime>> listMap) {
         int[] caculatorTimes = new int[2];
         if (proNum == 1 && stepNum == 1) {//是第一个产品也是第一个工艺步骤
             caculatorTimes[0] = 0;
@@ -92,18 +97,43 @@ public class CaculatorStepTime {
             caculatorTimes[0] = getCurTime(stepNum, routeTimes) * (proNum - 1) + (proNum - 1);
             caculatorTimes[1] = caculatorTimes[0] + routeTimes.get(stepNum - 1);
         } else {//不是第一个产品不是第一个工艺步骤 递归
+            //先从暂存中拿时间，拿不到再迭代获取
+            int sameProNumTime=listMap.get(proNum).get(stepNum - 1-1).getStartTime();
+
             //获取相同个产品但是1前一步骤的结束时间
-            int sameProNumTime = caculatorTimes(proNum, stepNum - 1, routeTimes)[1];
+            //int sameProNumTime = caculatorTimes(proNum, stepNum - 1, routeTimes,listMap)[1];
             //获取相同步骤，但是上1产品的结束时间
-            int sameStepNum = caculatorTimes(proNum - 1, stepNum, routeTimes)[1];
-            if (sameProNumTime > sameStepNum) {
+            //int sameStepNumTime = caculatorTimes(proNum - 1, stepNum, routeTimes,listMap)[1];
+            int sameStepNumTime = listMap.get(proNum - 1).get(stepNum-1).getEndTime();
+            if (sameProNumTime > sameStepNumTime) {
                 caculatorTimes[0] = sameProNumTime + 1;
                 caculatorTimes[1] = caculatorTimes[0] + routeTimes.get(stepNum - 1);
             } else {
-                caculatorTimes[0] = sameStepNum + 1;
+                caculatorTimes[0] = sameStepNumTime + 1;
                 caculatorTimes[1] = caculatorTimes[0] + routeTimes.get(stepNum - 1);
             }
         }
+
+        List<StepTime> stepTimeList = null;
+        StepTime stepTime = null;
+        //暂存
+        if(listMap.containsKey(proNum)){
+            stepTimeList = listMap.get(proNum);
+            stepTimeList = listMap.get(proNum);
+            stepTime =new StepTime();
+            stepTime.setStartTime(caculatorTimes[0]);
+            stepTime.setEndTime(caculatorTimes[1]);
+            stepTimeList.add(stepTime);
+            listMap.put(proNum,stepTimeList);
+        }else{
+            stepTimeList = new ArrayList<StepTime>();
+            stepTime =new StepTime();
+            stepTime.setStartTime(caculatorTimes[0]);
+            stepTime.setEndTime(caculatorTimes[1]);
+            stepTimeList.add(stepTime);
+            listMap.put(proNum,stepTimeList);
+        }
+
         return caculatorTimes;
     }
 
